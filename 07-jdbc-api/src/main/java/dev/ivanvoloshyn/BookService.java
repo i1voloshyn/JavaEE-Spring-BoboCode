@@ -1,7 +1,5 @@
 package dev.ivanvoloshyn;
 
-import org.postgresql.core.v3.SqlSerializationContext;
-
 import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -67,6 +65,63 @@ public class BookService implements BookRepository {
             connection.commit();
         } catch (SQLException e) {
             System.out.println("Exception occurred: " + e);
+        }
+    }
+
+    private void saveDefaultBook1(Connection connection) throws SQLException {
+        try (PreparedStatement statement = connection.prepareStatement(INSERT_BOOK_SQL)) {
+            statement.setString(1, "Java Spring 1");
+            statement.setString(2, "Some Author 1");
+            statement.setInt(3, 2026);
+            statement.setString(4, "correct-isbn 9");
+            statement.setInt(5, 5);
+            statement.executeUpdate();
+        }
+    }
+
+    private void saveDefaultBook2(Connection connection) throws SQLException {
+        try (PreparedStatement statement = connection.prepareStatement(INSERT_BOOK_SQL)) {
+            // THIS IS BAD->  
+            connection.setAutoCommit(true);
+            // With autoCommit = true, the INSERT is automatically committed before your manually thrown SQLException executes, assuming executeUpdate() succeeds.
+            // JDBC automatically commits the SQL statement.
+            /*
+              According to JDBC transaction semantics, changing auto-commit mode from false to true commits the current transaction.
+              Therefore
+              saveDefaultBook1() executes its INSERT without committing.
+              saveDefaultBook2() calls setAutoCommit(true), committing Book 1.
+              saveDefaultBook2() executes its INSERT, automatically committing Book 2.
+              The manually thrown exception cannot roll back either committed INSERT.
+             */
+
+            statement.setString(1, "Java Spring 2");
+            statement.setString(2, "Some Author 2");
+            statement.setInt(3, 2024);
+            statement.setString(4, "correct-isbn 10");
+            statement.setInt(5, 6);
+
+            statement.executeUpdate();     // INSERT + automatic COMMIT
+
+            //Exception is thrown after the INSERT has committed. It cannot undo that committed change.
+            throw new SQLException();      // Exception after COMMIT
+        }
+    }
+
+    public void someNotRealWorldExample() {
+        try (Connection connection = dataSource.getConnection()) {
+            try {
+                connection.setAutoCommit(false);       // The main method which should control transactions 
+
+                saveDefaultBook1(connection);
+                saveDefaultBook2(connection);
+
+                connection.commit();
+            } catch (SQLException e) {
+                System.out.println("Rollback because of exception: " + e);
+                connection.rollback();
+            }
+        } catch (Exception e) {
+            System.out.println("Exception in realWorldMethod: " + e);
         }
     }
 
