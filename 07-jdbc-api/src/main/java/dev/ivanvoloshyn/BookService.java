@@ -1,5 +1,7 @@
 package dev.ivanvoloshyn;
 
+import org.postgresql.core.v3.SqlSerializationContext;
+
 import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -11,6 +13,11 @@ import java.util.List;
 public class BookService implements BookRepository {
     private static final String FIND_ALL_BOOKS_SQL = """
             SELECT id,title,author,publication_year,isbn FROM books
+            """;
+
+    private static final String INSERT_BOOK_SQL = """
+            INSERT INTO books (title, author, publication_year, isbn, publisher_id)
+            VALUES (?,?,?,?,?)
             """;
 
     private final DataSource dataSource;
@@ -41,7 +48,26 @@ public class BookService implements BookRepository {
 
         } catch (SQLException e) {
             //todo add logger
+            System.out.println("Exception occurred: " + e);
         }
         return List.of();
     }
+
+    @Override
+    public void saveDefaultBook() {
+        try (Connection connection = dataSource.getConnection()) {
+            connection.setAutoCommit(false);
+            PreparedStatement statement = connection.prepareStatement(INSERT_BOOK_SQL);
+            statement.setString(1, "Java Spring");
+            statement.setString(2, "Some Author");
+            statement.setInt(3, 2026);
+            statement.setString(4, "correct-isbn");
+            statement.setInt(5, 5);
+            statement.executeUpdate();
+            connection.commit();
+        } catch (SQLException e) {
+            System.out.println("Exception occurred: " + e);
+        }
+    }
+
 }

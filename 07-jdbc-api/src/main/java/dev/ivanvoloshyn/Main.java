@@ -9,5 +9,10 @@ public class Main {
 
         bookService.findAll()
                 .forEach(System.out::println);
+
+        bookService.saveDefaultBook();
+
+        bookService.findAll()
+                .forEach(System.out::println);
     }
 }
