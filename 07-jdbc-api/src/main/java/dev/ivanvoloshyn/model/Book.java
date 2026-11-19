@@ -1,18 +1,18 @@
-package dev.ivanvoloshyn;
+package dev.ivanvoloshyn.model;
 
-import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
 
+import java.time.LocalDate;
+
 @Setter
 @Getter
-@AllArgsConstructor
 @ToString
 public class Book {
     private int id;
     private String title;
-    private String author;
-    private int publicationYear;
+    private LocalDate publishDate;
+    private short pageCount;
     private String isbn;
 }
